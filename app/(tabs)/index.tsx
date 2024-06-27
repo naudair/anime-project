@@ -1,70 +1,191 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import axios from "axios";
+import { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { PopularAnime } from "@/components/PopularAnime";
+// import { RotateLoader } from "react-spinners";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export type AnimesData = {
+  id: string;
+  attributes: {
+    posterImage: {
+      large: string;
+    };
+    canonicalTitle: string;
+    startDate: string;
+    episodeCount: number;
+    popularityRank: string;
+    showType: string;
+    status: string;
+  };
+};
 
-export default function HomeScreen() {
+export default function Index() {
+  const [data, setData] = useState<AnimesData[]>([]);
+  const [genre, setGenre] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get<{ data: AnimesData[] }>(
+          genre
+            ? `https://kitsu.io/api/edge/anime?filter[categories]=${genre}`
+            : "https://kitsu.io/api/edge/trending/anime"
+        );
+        setData(res.data.data);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [genre]);
+
+  let userContainer = <Text>Hello</Text>;
+
+  // const sortedData = data.reverse((a: AnimesData, b: AnimesData) => {
+  //   return (
+  //     parseInt(a.attributes.popularityRank) -
+  //     parseInt(b.attributes.popularityRank)
+  //   );
+  // });
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View>
+      <View style={{ height: 150 }}>
+        <Text style={styles.head}>Choose genre</Text>
+
+        <View style={styles.btnContainer}>
+          {category.map((index) => (
+            <Pressable
+              onPress={() => setGenre(index)}
+              key={index}
+              style={[
+                {
+                  backgroundColor: index == genre ? "#E45959" : "#3F4042",
+                },
+                styles.genre,
+              ]}
+            >
+              <Text style={{ color: "#ffffff" }}>{index}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+      <View style={{ height: 350 }}>
+        <Text style={styles.head}>Popular</Text>
+        {loading ? (
+          <ScrollView horizontal={true} style={{ paddingTop: 100 }}>
+            {[1, 2, 3, 4].map((item) => (
+              // <RotateLoader
+              <ActivityIndicator
+                size="large"
+                key={item}
+                color="#E45959"
+                style={{ paddingHorizontal: 60, justifyContent: "flex-start" }}
+              />
+              // <Text >hello</Text>
+            ))}
+          </ScrollView>
+        ) : (
+          <ScrollView horizontal={true}>
+            {data.map((data) => (
+              <PopularAnime key={data.id} data={data} />
+            ))}
+          </ScrollView>
+        )}
+      </View>
+      <View style={{ height: 350 }}>
+        <Text style={styles.head}>For you</Text>
+        {loading ? (
+          <ScrollView horizontal={true} style={{ paddingTop: 100 }}>
+            {[1, 2, 3, 4].map((item) => (
+              <ActivityIndicator
+                key={item}
+                size="large"
+                color="#E45959"
+                style={{ paddingHorizontal: 60, justifyContent: "flex-start" }}
+              />
+            ))}
+          </ScrollView>
+        ) : (
+          <ScrollView horizontal={true}>
+            {data.map((data) => (
+              <PopularAnime key={data.id} data={data} />
+            ))}
+          </ScrollView>
+        )}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  head: {
+    color: "#ffffff",
+    fontSize: 25,
+    fontWeight: "900",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+    width: 160,
+    paddingTop: 5,
+    // backgroundColor:"red"
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  dateEp: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "300",
+    textAlign: "center",
+  },
+  animeContainer: {
+    alignItems: "center",
+    width: 140,
+    marginTop: 24,
+    marginRight: 30,
+    // borderColor: "#ffffff",
+    // borderWidth: 1,
+  },
+  image: {
+    backgroundColor: "#6bc0e8",
+    width: 140,
+    height: 194,
+    borderRadius: 20,
+  },
+  btnContainer: {
+    flexWrap: "wrap",
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 17,
+  },
+  genre: {
+    // backgroundColor: "#3F4042", //#E45959
+    width: 110,
+    height: 33,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 20,
+    fontWeight: "900",
   },
 });
+
+export const category = [
+  "Adventure",
+  "Action",
+  "Horror",
+  "Fantasy",
+  "Drama",
+  "Thriller",
+];
